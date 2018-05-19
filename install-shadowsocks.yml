@@ -1,0 +1,55 @@
+---
+- hosts: test
+  become: yes
+  gather_facts: true
+  tasks:
+    - name: 1.1 install epel repo
+      yum_repository:
+        name: epel
+        description: Extra Packages for Enterprise Linux 7 - $basearch
+        mirrorlist: https://mirrors.fedoraproject.org/metalink?repo=epel-7&arch=$basearch
+        gpgkey: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-{{ ansible_distribution_major_version }}
+        gpgcheck: yes
+        enabled: yes
+        state: present
+    - name: 1.2 install remi repo
+      yum_repository:
+        name: remi
+        description: Remi's RPM repository for Enterprise Linux 7 - $basearch
+        mirrorlist: http://cdn.remirepo.net/enterprise/7/remi/mirror
+        gpgkey: http://rpms.remirepo.net/RPM-GPG-KEY-remi
+        gpgcheck: yes
+        enabled: yes
+        state: present
+    - name: 1.3 install ss repo
+      yum_repository:
+        name: librehat-shadowsocks-epel-7
+        description: This shadowsocks copr hosts some shadowsocks-related packages, including shadowsocks-qt5, libQtShadowosocks, and shadowsocks-libev.
+        baseurl: https://copr-be.cloud.fedoraproject.org/results/librehat/shadowsocks/epel-7-$basearch/
+        gpgkey: https://copr-be.cloud.fedoraproject.org/results/librehat/shadowsocks/pubkey.gpg
+        gpgcheck: yes
+        skip_if_unavailable: yes
+        enabled: yes
+        state: present
+    - name: 2.1 clean yum cache bebore install ss package
+      command: yum clean metadata warn=no
+    - name: 2.2 install ss package
+      package: name=shadowsocks-libev state=present
+    - name: 3. install ss config
+      template:
+        src: config/config.json
+        dest: /etc/shadowsocks-libev/config.json
+        owner: nobody
+        group: nobody
+        mode: 0644
+    - name: 3.1 fix shadowsocks-libev-3.1.3 bug centos7 on missing libmbedcrypto.socreate link for /usr/lib64/libmbedcrypto.so.0 
+      file:
+        src:  /usr/lib64/libmbedcrypto.so.2.7.0
+        dest: /usr/lib64/libmbedcrypto.so.0
+        state: link
+    - name: 4. start and enable ss on boot
+      service:
+        name: shadowsocks-libev
+        state: restarted
+        enabled: yes
+

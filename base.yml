@@ -1,0 +1,15 @@
+---
+- hosts: test
+  become: yes
+  gather_facts: true
+  tasks:
+    - name: enable sudo with no pass for wheel group
+      lineinfile:
+        path: /etc/sudoers
+        state: present
+        regexp: '^%wheel\s'
+        line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+        validate: '/usr/sbin/visudo -cf %s'
+    - name: set timezone to Asia/Shanghai
+      timezone:
+        name: Asia/Shanghai

@@ -1,0 +1,43 @@
+---
+- hosts: test
+  become: yes
+  gather_facts: false
+  tasks:
+    - name: install openvpn package
+      package: name=openvpn state=present
+    - name: install openvpn config 
+      copy:
+        src: config/openvpn.tar.gz
+        dest: /etc/openvpn.tar.gz
+        mode: 0600
+    - name: extract openvpn config
+      command: tar zxf openvpn.tar.gz warn=no
+      args:
+        chdir: /etc/
+        creates: /etc/openvpn/keys/ca.crt
+    - name: add iptables config
+      copy:
+        src: config/sysconfig/iptables
+        dest: /etc/sysconfig/iptables
+        mode: 0600
+    - name: add logrotate config
+      copy:
+        src: config/logrotate.d/openvpn
+        dest: /etc/logrotate.d/openvpn
+    - name: ensure openvpn log dir /var/log/openvpn exists
+      file:
+        path: /var/log/openvpn
+        state: directory
+        mode: 0755
+    - name: reload iptables
+      command: /sbin/iptables-restore /etc/sysconfig/iptables
+    - name: ensure iptables auto start on boot
+      service:
+        name: iptables
+        enabled: yes
+    - name: ensure openvpn running and auto start on boot
+      service:
+        name: openvpn@server.service
+        state: restarted
+        enabled: yes
+    
