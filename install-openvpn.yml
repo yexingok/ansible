@@ -40,4 +40,8 @@
         name: openvpn@server.service
         state: restarted
         enabled: yes
-    
+    - name: restart fail2ban
+      service:
+        name: fail2ban
+        state: restarted
+
